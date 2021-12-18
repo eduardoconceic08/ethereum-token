@@ -25,7 +25,7 @@ contract Hodler is Ownable {
 
   mapping(address => mapping(uint256 => Item)) private items;
 
-  function Hodler(address _purpose, address _dubi) {
+  function Hodler(address _purpose, address _dubi) public {
     require(_purpose != address(0));
 
     purpose = Purpose(_purpose);
@@ -44,7 +44,13 @@ contract Hodler is Ownable {
     // only 3 types are allowed
     require(_months == 3 || _months == 6 || _months == 12);
 
+    // user
     address _user = msg.sender;
+
+    // get dubi item
+    Item storage item = items[_user][_id];
+    // make sure dubi doesnt exist already
+    require(item.id != _id);
 
     // turn months to seconds
     uint256 _seconds = _months.mul(2628000);
@@ -66,12 +72,6 @@ contract Hodler is Ownable {
     // get dubi amount: => (_value * ownerPercentage100) / 100 * 100
     uint256 ownerDubiAmount = _value.mul(ownerPercentage100).div(10000);
 
-    // get dubi item
-    Item item = items[_user][_id];
-
-    // make sure dubi doesnt exist already
-    require(item.id != _id);
-
     // update state
     items[_user][_id] = Item(_id, _user, _value, _releaseTime, false);
 
@@ -86,10 +86,11 @@ contract Hodler is Ownable {
   function release(uint256 _id) external {
     require(_id > 0);
 
+    // user
     address _user = msg.sender;
 
     // get item
-    Item item = items[_user][_id];
+    Item storage item = items[_user][_id];
 
     // check if it exists
     require(item.id == _id);
@@ -109,8 +110,8 @@ contract Hodler is Ownable {
     purpose.safeTransfer(item.beneficiary, item.value);
   }
 
-  function getItem(address _user, uint256 _id) view returns (uint256, address, uint256, uint256, bool) {
-    Item item = items[_user][_id];
+  function getItem(address _user, uint256 _id) public view returns (uint256, address, uint256, uint256, bool) {
+    Item storage item = items[_user][_id];
 
     return (
       item.id,
